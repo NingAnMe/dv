@@ -38,6 +38,7 @@ class dv_map(dv_base):
         Constructor
         '''
         # fig
+
         if fig is None and "figsize" not in kwargs:
             self.__fig_resize = True
         else:
@@ -48,6 +49,7 @@ class dv_map(dv_base):
         self.fontsize_cbtick = 8.5  # 刻度字体大小
         self.fontsize_label = 8  # xy轴名字字体大小
         self.fontsize_title = 8.5  # 标题字体大小
+        self.fontsize_colorbar_label = 8  # 字体大小
         self.title_pos = 1.03
         self.box = [90., -90., -180., 180.]
 
@@ -84,6 +86,9 @@ class dv_map(dv_base):
         self.colorbar_bounds = None
         self.colorbar_unit = None
         self.colorbar_extend = 'neither'
+        self.colorbar_label = None
+        self.colorbar_ticks = None
+        self.colorbar_tick_labels = None
         self.norm = None
         # lw: Line Width
         self.lw_boundray = 0.27
@@ -527,6 +532,15 @@ class dv_map(dv_base):
                                        boundaries=self.colorbar_bounds,
                                        ticks=self.colorbar_bounds,
                                        orientation='vertical', format=self.colorbar_fmt)
+
+        if self.colorbar_label:
+            cb.set_label(self.colorbar_label, fontproperties=self.font_leg,
+                         fontsize=self.fontsize_colorbar_label)
+        if self.colorbar_ticks:
+            cb.set_ticks(self.colorbar_ticks)
+        if self.colorbar_tick_labels:
+            cb.set_ticklabels(self.colorbar_tick_labels)
+
         # font of colorbar
         for l in colorbar_ax.yaxis.get_ticklabels():
             l.set_fontproperties(self.font)
