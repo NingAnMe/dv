@@ -334,7 +334,7 @@ def add_title(titledict):
         plt.ylabel(titledict["ylabel"], fontsize=11, fontproperties=FONT0)
 
 
-def add_label(ax, label, local, fontsize=11, fontproperties=FONT0):
+def add_label(ax, label, local, fontsize=11, fontproperties=FONT_MONO):
     """
     添加子图的标签
     :param fontproperties:
@@ -599,7 +599,7 @@ def add_year_xaxis(ax, xlim_min, xlim_max):
     add year xaxis
     """
     if xlim_min.year == xlim_max.year:
-        ax.set_xlabel(xlim_min.year, fontsize=11, fontproperties=FONT0)
+        ax.set_xlabel(xlim_min.year, fontsize=11, fontproperties=FONT_MONO)
         return
     newax = ax.twiny()
     newax.set_frame_on(True)
