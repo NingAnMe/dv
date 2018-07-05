@@ -92,6 +92,12 @@ class PlotAx(object):
     def set_y_major_count(self, major_count):
         self.y_major_count = major_count
 
+    def set_x_minor_count(self, minor_count):
+        self.x_minor_count = minor_count
+
+    def set_y_minor_count(self, minor_count):
+        self.y_minor_count = minor_count
+
     def set_x_axis_range(self, axis_min=None, axis_max=None):
         self.x_axis_min = axis_min
         self.x_axis_max = axis_max
@@ -145,6 +151,7 @@ class PlotAx(object):
 
 class Histogram(PlotAx):
     """
+    绘制直方图
     """
     def __init__(self, ax):
         super(Histogram, self).__init__(ax)
@@ -183,6 +190,122 @@ class Histogram(PlotAx):
                      alpha=self.histogram_alpha)
         self.ax.legend(prop={"size": self.histogram_label_font_size})
         self.set_ax()
+
+
+class TimeSeries(PlotAx):
+    """
+    绘制长时间序列图
+    """
+    def __init__(self, ax):
+        super(TimeSeries, self).__init__(ax=ax)
+
+        self.time_series_marker = None
+        self.time_series_marker_size = None
+        self.time_series_marker_facecolor = None
+        self.time_series_marker_edgecolor = None
+        self.time_series_marker_edgewidth = None
+        self.time_series_color = None
+        self.time_series_alpha = 1.0
+        self.time_series_line_width = None
+        self.time_series_label = None
+        self.time_series_zorder = 100
+
+        self.zero_line_width = 1.0
+        self.zero_line_color = '#808080'
+
+        self.background_x = None
+        self.background_y1 = None
+        self.background_y2 = None
+        self.background_fill_color = '#f63240'
+        self.background_fill_alpha = 0.1
+        self.background_fill_zorder = 80
+
+    def set_time_series(self, maker=None, marker_size=None, marker_facecolor=None,
+                        marker_edgecolor=None, marker_edgewidth=None, color=None,
+                        alpha=None, line_width=None, label=None):
+        if maker is not None:
+            self.time_series_marker = maker
+        if marker_size is not None:
+            self.time_series_marker_size = marker_size
+        if marker_facecolor is not None:
+            self.time_series_marker_facecolor = marker_facecolor
+        if marker_edgecolor is not None:
+            self.time_series_marker_edgecolor = marker_edgecolor
+        if marker_edgewidth is not None:
+            self.time_series_marker_edgewidth = marker_edgewidth
+        if color is not None:
+            self.time_series_color = color
+        if alpha is not None:
+            self.time_series_alpha = alpha
+        if line_width is not None:
+            self.time_series_line_width = line_width
+        if label is not None:
+            self.time_series_label = label
+
+    def set_zero_line(self, zero_line=True, width=None, color=None):
+        if zero_line is not None:
+            self.zero_line = zero_line
+        if width is not None:
+            self.zero_line_width = width
+        if color is not None:
+            self.zero_line_color = color
+
+    def set_background_fill(self, background_fill=True, x=None, y1=None, y2=None, color=None,
+                      alpha=None, zorder=None):
+        if background_fill is not None:
+            self.background_fill = background_fill
+        if x is not None:
+            self.background_x = x
+        if y1 is not None:
+            self.background_y1 = y1
+        if y2 is not None:
+            self.background_y2 = y2
+        if color is not None:
+            self.background_fill_color = color
+        if alpha is not None:
+            self.background_fill_alpha = alpha
+        if zorder is not None:
+            self.background_fill_zorder = zorder
+
+    def plot_time_series(self, data_x, data_y):
+        """
+        :param data_x: 日期数据
+        :param data_y: 值数据
+        :return:
+        """
+        self.ax.plot(data_x,
+                     data_y,
+                     self.time_series_marker,
+                     ms=self.time_series_marker_size,
+                     lw=self.time_series_line_width,
+                     c=self.time_series_color,
+                     markerfacecolor=self.time_series_marker_facecolor,
+                     markeredgecolor=self.time_series_marker_edgecolor,
+                     mew=self.time_series_marker_edgewidth,
+                     alpha=self.time_series_alpha,
+                     label=self.time_series_label,
+                     zorder=self.time_series_zorder,
+        )
+        set_x_locator(self.ax, self.x_axis_min, self.x_axis_max)
+
+    def plot_time_series_test(self, data_x, data_y, **kwargs):
+        self.ax.plot(data_x, data_y, **kwargs)
+
+    def plot_zero_line(self):
+        self.ax.plot([self.x_axis_min, self.x_axis_max],
+                     [0, 0],
+                     color=self.zero_line_color,
+                     linewidth=self.zero_line_width,)
+
+    def plot_background_fill(self):
+        self.ax.fill_between(self.background_x,
+                             self.background_y1,
+                             self.background_y2,
+                             facecolor=self.background_fill_color,
+                             edgecolor=self.background_fill_color,
+                             alpha=self.background_fill_alpha,
+                             zorder=self.background_fill_zorder,
+                             interpolate=True)
 
 
 def set_tick_font(ax, scale_size=11, color="#000000"):
