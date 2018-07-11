@@ -33,7 +33,7 @@ COLOR_LINE = '#999999'  # '#cccccc'
 # plt.style.use(os.path.join(selfPath, 'dv_plt.mplstyle'))
 
 class dv_map(dv_base):
-    def __init__(self, fig=None, ax=None, **kwargs):
+    def __init__(self, fig=None, **kwargs):
         '''
         Constructor
         '''
@@ -43,7 +43,7 @@ class dv_map(dv_base):
             self.__fig_resize = True
         else:
             self.__fig_resize = False
-        super(dv_map, self).__init__(fig, ax, **kwargs)
+        super(dv_map, self).__init__(fig, **kwargs)
         plt.style.use(os.path.join(selfPath, 'dv_plt.mplstyle'))
         self.fontsize_tick = 8.5  # 刻度字体大小
         self.fontsize_cbtick = 8.5  # 刻度字体大小
