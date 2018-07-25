@@ -149,6 +149,182 @@ class PlotAx(object):
                 add_annotate(self.ax, self.annotate[k], k, fontsize=self.annotate_font_size)
 
 
+def draw_distribution(ax, x, y, label=None, ax_annotate=None, tick=None,
+                      axislimit=None, locator=None,
+                      avxline=None, zeroline=None, scatter_delta=None,
+                      background_fill=None, regressline=None, ):
+    """
+    画偏差分布图
+    :param tick:
+    :param ax:
+    :param x:
+    :param y:
+    :param label:
+    :param ax_annotate:
+    :param axislimit:
+    :param locator:
+    :param avxline:
+    :param zeroline:
+    :param scatter_delta:
+    :param background_fill:
+    :param regressline:
+    :return:
+    """
+
+    # 添加 y = 0 的线
+    if zeroline is not None:
+        zeroline_width = zeroline.get("line_width")
+        zeroline_color = zeroline.get("line_color")
+        ax.plot([xmin, xmax], [0, 0], color=zeroline_color,
+                linewidth=zeroline_width)
+
+    # 画偏差散点
+    if scatter_delta is not None:
+        delta = x - y  # 计算偏差
+        scatter_size = scatter_delta.get("scatter_size")  # 大小
+        scatter_alpha = 0.8  # 透明度
+        scatter_marker = "o"  # 形状
+        scatter_color = "b"  # 颜色
+        ax.scatter(x, delta, s=scatter_size, marker=scatter_marker,
+                   c=scatter_color, lw=0, alpha=scatter_alpha)
+
+    # 画偏差回归线
+    if regressline is not None:
+        delta = x - y
+        delta_ab = np.polyfit(x, delta, 1)
+        delta_a = delta_ab[0]
+        delta_b = delta_ab[1]
+        regressline_x = [xmin, xmax]
+        regressline_y = [xmin * delta_a + delta_b, xmax * delta_a + delta_b]
+
+        regressline_color = "r"
+        regressline_width = 1.2
+
+        ax.plot(regressline_x, regressline_y,
+                color=regressline_color, linewidth=regressline_width,
+                zorder=100)
+
+    # 画背景填充线
+    if background_fill is not None:
+        delta = x - y
+        fill_color = background_fill.get("fill_color")
+        fill_step = background_fill.get("fill_step")
+        T_seg, mean_seg, std_seg, sampleNums = get_bar_data(x, delta, xmin,
+                                                            xmax, fill_step)
+        ax.plot(T_seg, mean_seg, "o-",
+                ms=6, lw=0.6, c=fill_color,
+                mew=0, zorder=50)
+        ax.fill_between(T_seg, mean_seg - std_seg, mean_seg + std_seg,
+                        facecolor=fill_color, edgecolor=fill_color,
+                        interpolate=True, alpha=0.4, zorder=100)
+
+    # 画 avx 注释线
+    if avxline is not None:
+        avxline_x = avxline.get("line_x")
+        avxline_color = avxline.get("line_color")
+        avxline_width = 0.7
+        avxline_word = avxline.get("word")
+        avxline_wordcolor = avxline.get("word_color")
+        avxline_wordlocal = avxline.get("word_location")
+        avxline_wordsize = avxline.get("word_size")
+        ax.axvline(x=avxline_x, color=avxline_color, lw=avxline_width)
+        ax.annotate(avxline_word, avxline_wordlocal,
+                    va="top", ha="center", color=avxline_wordcolor,
+                    size=avxline_wordsize, fontproperties=FONT_MONO)
+
+
+class Scatter(PlotAx):
+    """
+    绘制相对详细图
+    """
+    def __init__(self, ax):
+        super(Scatter, self).__init__(ax)
+        self.scatter_size = 1
+        self.scatter_alpha = 0.8  # 透明度
+        self.scatter_marker = "o"  # 形状
+        self.scatter_color = "b"  # 颜色
+
+        self.zero_line_width = 1.0
+        self.zero_line_color = '#808080'
+
+        self.background_x = None
+        self.background_y1 = None
+        self.background_y2 = None
+        self.background_fill_color = '#f63240'
+        self.background_fill_alpha = 0.1
+        self.background_fill_zorder = 80
+
+    # TODO 背景填充线
+    # if avxline is not None:
+    #     avxline_x = avxline.get("line_x")
+    #     avxline_color = avxline.get("line_color")
+    #     avxline_width = 0.7
+    #     avxline_word = avxline.get("word")
+    #     avxline_wordcolor = avxline.get("word_color")
+    #     avxline_wordlocal = avxline.get("word_location")
+    #     avxline_wordsize = avxline.get("word_size")
+    #     ax.axvline(x=avxline_x, color=avxline_color, lw=avxline_width)
+    #     ax.annotate(avxline_word, avxline_wordlocal,
+    #                 va="top", ha="center", color=avxline_wordcolor,
+    #                 size=avxline_wordsize, fontproperties=FONT_MONO)
+
+    def set_zero_line(self, zero_line=True, width=None, color=None):
+        if zero_line is not None:
+            self.zero_line = zero_line
+        if width is not None:
+            self.zero_line_width = width
+        if color is not None:
+            self.zero_line_color = color
+
+    def set_background_fill(self, background_fill=True, x=None, y1=None, y2=None, color=None,
+                      alpha=None, zorder=None):
+        if background_fill is not None:
+            self.background_fill = background_fill
+        if x is not None:
+            self.background_x = x
+        if y1 is not None:
+            self.background_y1 = y1
+        if y2 is not None:
+            self.background_y2 = y2
+        if color is not None:
+            self.background_fill_color = color
+        if alpha is not None:
+            self.background_fill_alpha = alpha
+        if zorder is not None:
+            self.background_fill_zorder = zorder
+
+    def set_scatter(self, size=None, alpha=None, marker=None, color=None):
+        if size is not None:
+            self.scatter_size = size
+        if alpha is not None:
+            self.scatter_alpha = alpha
+        if marker is not None:
+            self.scatter_marker = marker
+        if color is not None:
+            self.scatter_color = color
+
+    def plot_scatter(self, data_x=None, data_y=None):
+        self.ax.scatter(data_x, data_y, s=self.scatter_size, marker=self.scatter_marker,
+                   c=self.scatter_color, lw=0, alpha=self.scatter_alpha)
+        self.set_ax()
+
+    def plot_zero_line(self):
+        self.ax.plot([self.x_axis_min, self.x_axis_max],
+                     [0, 0],
+                     color=self.zero_line_color,
+                     linewidth=self.zero_line_width, )
+
+    def plot_background_fill(self):
+        self.ax.fill_between(self.background_x,
+                             self.background_y1,
+                             self.background_y2,
+                             facecolor=self.background_fill_color,
+                             edgecolor=self.background_fill_color,
+                             alpha=self.background_fill_alpha,
+                             zorder=self.background_fill_zorder,
+                             interpolate=True)
+
+
 class Histogram(PlotAx):
     """
     绘制直方图
@@ -567,6 +743,8 @@ def bias_information(x, y, boundary=None, bias_range=1):
 
 def set_x_locator(ax, xlim_min, xlim_max):
     day_range = (xlim_max - xlim_min).days
+    if day_range <= 6:
+        return
     if day_range <= 60:
         days = mdates.DayLocator(interval=(day_range / 6))
         ax.xaxis.set_major_locator(days)
