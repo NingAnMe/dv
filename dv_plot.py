@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.ticker import MultipleLocator
 from matplotlib.font_manager import FontProperties
+from matplotlib import colors
 from mpl_toolkits.basemap import Basemap
 import matplotlib.patches as mpatches
 
@@ -254,6 +255,8 @@ class Scatter(PlotAx):
         self.background_fill_alpha = 0.1
         self.background_fill_zorder = 80
 
+        self.plot_result = None
+
     # TODO 背景填充线
     # if avxline is not None:
     #     avxline_x = avxline.get("line_x")
@@ -303,9 +306,24 @@ class Scatter(PlotAx):
         if color is not None:
             self.scatter_color = color
 
-    def plot_scatter(self, data_x=None, data_y=None):
-        self.ax.scatter(data_x, data_y, s=self.scatter_size, marker=self.scatter_marker,
-                   c=self.scatter_color, lw=0, alpha=self.scatter_alpha)
+    def plot_scatter(self, data_x=None, data_y=None, kde=False):
+        if not kde:
+            self.ax.scatter(data_x, data_y, s=self.scatter_size, marker=self.scatter_marker,
+                       c=self.scatter_color, lw=0, alpha=self.scatter_alpha)
+        else:
+            data_x = data_x.reshape(-1)
+            data_y = data_y.reshape(-1)
+            xy = np.vstack((data_x, data_y))
+            kde = stats.gaussian_kde(xy)
+            z = kde(xy)
+            # z = z / z.sum()
+            norm = colors.Normalize()
+            norm.autoscale(z)
+            self.plot_result = self.ax.scatter(data_x, data_y, c=z, s=self.scatter_size,
+                                               marker=self.scatter_marker, lw=0,
+                                               alpha=self.scatter_alpha, cmap=plt.get_cmap('jet'),
+                                               norm=norm)
+
         self.set_ax()
 
     def plot_zero_line(self):
