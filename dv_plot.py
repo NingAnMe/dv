@@ -4,7 +4,6 @@
 @Author  : AnNing
 """
 import os
-from math import floor, ceil
 from datetime import datetime
 
 import numpy as np
@@ -15,23 +14,23 @@ mpl.use("Agg")  # 必须加这个字段，否则引用 pyplot 服务器会报错
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from matplotlib.ticker import MultipleLocator
+from matplotlib.ticker import MultipleLocator, LinearLocator
 from matplotlib.font_manager import FontProperties
 from matplotlib import colors
 from mpl_toolkits.basemap import Basemap
 import matplotlib.patches as mpatches
 
 
-def get_ds_font(fontName="OpenSans-Regular.ttf"):
+def get_ds_font(font_name="OpenSans-Regular.ttf"):
     """
     载入字体
     "OpenSans-Regular.ttf"
     "simhei.ttf"
     "微软雅黑.ttf"
     """
-    selfpath = os.path.split(os.path.realpath(__file__))[0]
+    self_path = os.path.split(os.path.realpath(__file__))[0]
     font0 = FontProperties()
-    font_path = os.path.join(selfpath, "FNT", fontName)
+    font_path = os.path.join(self_path, "FNT", font_name)
     if os.path.isfile(font_path):
         font0.set_file(font_path)
         return font0
@@ -45,16 +44,279 @@ FONT_MONO = get_ds_font("DroidSansMono.ttf")
 
 class PlotAx(object):
     """
+    格式化 matplotlib.axis 常用方法
+    """
+    def __init__(self):
+        self.font = FONT0  # 字体
+
+        self.x_label_font_size = 11
+        self.y_label_font_size = 11
+
+        self.tick_font_size = 11
+
+        self.annotate_font_size = 11
+        self.annotate_font_color = '#000000'
+
+    def format_ax(self, ax, **kwargs):
+        """
+        ax = ax
+
+        font = FONT0  # 字体
+
+        x_label = None  # X 轴标签
+        y_label = None  # Y 轴标签
+        x_label_font_size = 11  # X 轴标签字体
+        y_label_font_size = 11  # Y 轴标签字体
+
+        x_major_count = None  # X 轴主刻度数量
+        x_minor_count = None  # Y 轴主刻度数量
+        y_major_count = None  # X 轴次刻度数量
+        y_minor_count = None  # Y 轴次刻度数量
+
+        x_axis_min = None  # X 轴最小值
+        x_axis_max = None  # X 轴最大值
+        y_axis_min = None  # Y 轴最小值
+        y_axis_max = None  # Y 轴最大值
+
+        tick_font_size = 11  # 刻度文字字体大小
+
+        annotate = None  # 注释
+        annotate_font_size = 11  # 注释字体大小
+        annotate_font_color = '#000000'
+
+        :param ax:
+        :param kwargs: (dict)
+        :return:
+        """
+        # 设置字体
+        if 'font' in kwargs:
+            self.font = kwargs.get('font')
+
+        # 设置 label
+        if 'x_label' in kwargs:
+            x_label = kwargs.get('x_label')
+            if 'x_label_font_size' in kwargs:
+                x_label_font_size = kwargs.get('x_label_font_size')
+            else:
+                x_label_font_size = self.x_label_font_size
+            ax.set_xlabel(x_label, fontsize=x_label_font_size, fontproperties=self.font)
+        if 'y_label' in kwargs:
+            y_label = kwargs.get('y_label')
+            if 'y_label_font_size' in kwargs:
+                y_label_font_size = kwargs.get('y_label_font_size')
+            else:
+                y_label_font_size = self.y_label_font_size
+            ax.set_ylabel(y_label, fontsize=y_label_font_size, fontproperties=self.font)
+
+        # 设置 x y 轴的范围
+        if 'x_axis_min' in kwargs and 'x_axis_max' in kwargs:
+            x_axis_min = kwargs.get('x_axis_min')
+            x_axis_max = kwargs.get('x_axis_max')
+            ax.set_xlim(x_axis_min, x_axis_max)
+
+            # 如果是长时间序列图，设置长时间序列x轴日期坐标
+            if kwargs.get('timeseries') is not None:
+                self.set_timeseries_x_locator(ax, x_axis_min, x_axis_max)
+
+        if 'y_axis_min' in kwargs and 'y_axis_max' in kwargs:
+            y_axis_min = kwargs.get('y_axis_min')
+            y_axis_max = kwargs.get('y_axis_max')
+            ax.set_ylim(y_axis_min, y_axis_max)
+
+        # 设置大刻度的数量
+        if 'x_major_count' in kwargs:
+            x_major_count = kwargs.get('x_major_count')
+            ax.xaxis.set_major_locator(LinearLocator(x_major_count))
+        if 'y_major_count' in kwargs:
+            y_major_count = kwargs.get('y_major_count')
+            ax.yaxis.set_major_locator(LinearLocator(y_major_count))
+
+        # 设置小刻度的数量
+        if 'x_minor_count' in kwargs:
+            x_minor_count = kwargs.get('x_minor_count')
+            x_major_count = len(ax.xaxis.get_majorticklocs())
+            ax.xaxis.set_minor_locator(LinearLocator((x_major_count - 1) * (x_minor_count + 1) + 1))
+        if 'y_minor_count' in kwargs:
+            y_minor_count = kwargs.get('y_minor_count')
+            y_major_count = len(ax.yaxis.get_majorticklocs())
+            ax.yaxis.set_minor_locator(LinearLocator((y_major_count - 1) * (y_minor_count + 1) + 1))
+
+        # 设置图片注释文字
+        if 'annotate' in kwargs:
+            annotate = kwargs.get('annotate')
+            if 'annotate_font_size' in kwargs:
+                annotate_font_size = kwargs.get('annotate_font_size')
+            else:
+                annotate_font_size = self.annotate_font_size
+            if 'annotate_font_color' in kwargs:
+                annotate_font_color = kwargs.get('annotate_font_color')
+            else:
+                annotate_font_color = self.annotate_font_color
+            for k in annotate:
+                add_annotate(ax, annotate[k], k, fontsize=annotate_font_size,
+                             color=annotate_font_color)
+
+    @classmethod
+    def plot_time_series(cls, ax, data_x, data_y, marker=None, marker_size=None,
+                         marker_facecolor=None, marker_edgecolor=None, marker_edgewidth=None,
+                         color=None, alpha=None, line_width=None, label=None, zorder=None):
+        """
+        :param ax:
+        :param data_x:
+        :param data_y:
+        :param marker:
+        :param marker_size:
+        :param marker_facecolor:
+        :param marker_edgecolor:
+        :param marker_edgewidth:
+        :param color:
+        :param alpha:
+        :param line_width:
+        :param label:
+        :param zorder:
+        :return:
+        """
+        if marker is None:
+            marker = 'o'
+        if marker_size is None:
+            marker_size = 6
+        if marker_edgecolor is None:
+            marker_edgecolor = 'b'
+        if marker_edgewidth is None:
+            marker_edgewidth = 0.3
+        if color is None:
+            color = 'b'
+        if alpha is None:
+            alpha = 1.0
+        if label is None:
+            label = 'Daily'
+        if zorder is None:
+            zorder = 100
+
+        ax.plot(data_x, data_y, marker, ms=marker_size, lw=line_width, c=color,
+                markerfacecolor=marker_facecolor, markeredgecolor=marker_edgecolor,
+                mew=marker_edgewidth, alpha=alpha, label=label, zorder=zorder)
+
+    @classmethod
+    def plot_zero_line(cls, ax, x_axis_min=None, x_axis_max=None, line_color=None, line_width=None):
+        """
+        绘制 y = 0 线
+        :param ax:
+        :param line_color:
+        :param line_width:
+        :param x_axis_min:
+        :param x_axis_max:
+        :return:
+        """
+        if line_color is None:
+            line_color = '#808080'
+        if line_width is None:
+            line_width = 1.0
+
+        if x_axis_min is not None and x_axis_max is not None:
+            ax.plot([x_axis_min, x_axis_max], [0, 0], color=line_color, linewidth=line_width)
+
+    @classmethod
+    def plot_background_fill(cls, ax, x=None, y1=None, y2=None, color=None, alpha=None,
+                             zorder=None):
+        """
+        :param ax:
+        :param x:
+        :param y1:
+        :param y2:
+        :param color:
+        :param alpha:
+        :param zorder:
+        :return:
+        """
+        if color is None:
+            color = 'r'
+        if alpha is None:
+            alpha = 1.0
+        if zorder is None:
+            zorder = 100
+        ax.fill_between(x, y1, y2, facecolor=color, edgecolor=color, alpha=alpha, zorder=zorder,
+                        interpolate=True)
+
+    @classmethod
+    def set_timeseries_x_locator(cls, ax, xlim_min, xlim_max):
+        """
+        :param ax:
+        :param xlim_min: datetime 数据
+        :param xlim_max: datetime 数据
+        :return:
+        """
+        day_range = (xlim_max - xlim_min).days
+        if day_range <= 6:
+            return
+        if day_range <= 60:
+            days = mdates.DayLocator(interval=(day_range / 6))
+            ax.xaxis.set_major_locator(days)
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d"))
+        else:
+            month_range = day_range / 30
+            if month_range <= 12.:
+                months = mdates.MonthLocator()  # every month
+                ax.xaxis.set_major_locator(months)
+                ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+            elif month_range <= 24.:
+                months = mdates.MonthLocator(interval=2)
+                ax.xaxis.set_major_locator(months)
+                ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+            elif month_range <= 48.:
+                months = mdates.MonthLocator(interval=4)
+                ax.xaxis.set_major_locator(months)
+                ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+            else:
+                years = mdates.YearLocator()
+                ax.xaxis.set_major_locator(years)
+                ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+
+            if month_range <= 48:
+                PlotAx.add_year_xaxis(ax, xlim_min, xlim_max)
+
+    @classmethod
+    def add_year_xaxis(cls, ax, xlim_min, xlim_max):
+        """
+        add year xaxis
+        :param ax:
+        :param xlim_min:
+        :param xlim_max:
+        :return:
+        """
+        if xlim_min.year == xlim_max.year:
+            ax.set_xlabel(xlim_min.year, fontsize=11, fontproperties=FONT_MONO)
+            return
+        newax = ax.twiny()
+        newax.set_frame_on(True)
+        newax.grid(False)
+        newax.patch.set_visible(False)
+        newax.xaxis.set_ticks_position("bottom")
+        newax.xaxis.set_label_position("bottom")
+        newax.set_xlim(xlim_min, xlim_max)
+        newax.xaxis.set_major_locator(mdates.YearLocator())
+        newax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+        newax.spines["bottom"].set_position(("outward", 20))
+        newax.spines["bottom"].set_linewidth(0.6)
+
+        newax.tick_params(which="both", direction="in")
+        set_tick_font(newax)
+        newax.xaxis.set_tick_params(length=5)
+
+
+class FormatAx(object):
+    """
+    OCC 绘图使用，不再维护
     """
     def __init__(self, ax):
         self.ax = ax
 
-        self.font = FONT0
+        self.font = FONT0  # 字体
 
-        self.x_label = None
-        self.y_label = None
-        self.x_label_font_size = 11
-        self.y_label_font_size = 11
+        self.x_label = None  # X 轴标签
+        self.y_label = None  # Y 轴标签
+        self.x_label_font_size = 11  # X 轴标签字体
+        self.y_label_font_size = 11  # Y 轴标签字体
 
         self.x_major_count = None
         self.x_minor_count = None
@@ -114,6 +376,12 @@ class PlotAx(object):
             self.annotate_font_size = annotate_font_size
 
     def set_ax(self):
+        """
+
+            update by anning 20180905
+            此方法不再进行维护，使用 format_ax 方法。
+        :return:
+        """
         # 设置 label
         if self.x_label:
             self.ax.set_xlabel(self.x_label, fontsize=self.x_label_font_size,
@@ -122,119 +390,37 @@ class PlotAx(object):
             self.ax.set_ylabel(self.y_label, fontsize=self.y_label_font_size,
                                fontproperties=self.font)
         # 设置大刻度和小刻度的数量
-        if self.x_major_count and self.x_axis_min and self.x_axis_max:
+        if self.x_major_count is not None and self.x_axis_min is not None \
+                and self.x_axis_max is not None:
             self.ax.xaxis.set_major_locator(
                 MultipleLocator((self.x_axis_max - self.x_axis_min) / self.x_major_count))
-        if self.y_major_count and self.y_axis_min and self.y_axis_max:
+        if self.y_major_count is not None and self.y_axis_min is not None \
+                and self.y_axis_max is not None:
             self.ax.yaxis.set_major_locator(
                 MultipleLocator((self.y_axis_max - self.y_axis_min) / self.y_major_count))
-        if self.x_minor_count:
+        if self.x_minor_count is not None:
             x_ticklocs = self.ax.xaxis.get_ticklocs()
             self.ax.xaxis.set_minor_locator(
                 MultipleLocator((x_ticklocs[1] - x_ticklocs[0]) / self.x_minor_count))
-        if self.y_minor_count:
+        if self.y_minor_count is not None:
             y_ticklocs = self.ax.yaxis.get_ticklocs()
             self.ax.yaxis.set_minor_locator(
                 MultipleLocator((y_ticklocs[1] - y_ticklocs[0]) / self.y_minor_count))
         # 设置刻度文字的大小
-        if self.tick_font_size:
+        if self.tick_font_size is not None:
             set_tick_font(self.ax, scale_size=self.tick_font_size)
         # 设置 x y 轴的范围
-        if self.x_axis_min and self.x_axis_max:
+        if self.x_axis_min is not None and self.x_axis_max is not None:
             self.ax.set_xlim(self.x_axis_min, self.x_axis_max)
-        if self.y_axis_min and self.y_axis_max:
+        if self.y_axis_min is not None and self.y_axis_max is not None:
             self.ax.set_ylim(self.y_axis_min, self.y_axis_max)
         # 设置图片注释文字
-        if self.annotate:
+        if self.annotate is not None:
             for k in self.annotate:
                 add_annotate(self.ax, self.annotate[k], k, fontsize=self.annotate_font_size)
 
 
-def draw_distribution(ax, x, y, label=None, ax_annotate=None, tick=None,
-                      axislimit=None, locator=None,
-                      avxline=None, zeroline=None, scatter_delta=None,
-                      background_fill=None, regressline=None, ):
-    """
-    画偏差分布图
-    :param tick:
-    :param ax:
-    :param x:
-    :param y:
-    :param label:
-    :param ax_annotate:
-    :param axislimit:
-    :param locator:
-    :param avxline:
-    :param zeroline:
-    :param scatter_delta:
-    :param background_fill:
-    :param regressline:
-    :return:
-    """
-
-    # 添加 y = 0 的线
-    if zeroline is not None:
-        zeroline_width = zeroline.get("line_width")
-        zeroline_color = zeroline.get("line_color")
-        ax.plot([xmin, xmax], [0, 0], color=zeroline_color,
-                linewidth=zeroline_width)
-
-    # 画偏差散点
-    if scatter_delta is not None:
-        delta = x - y  # 计算偏差
-        scatter_size = scatter_delta.get("scatter_size")  # 大小
-        scatter_alpha = 0.8  # 透明度
-        scatter_marker = "o"  # 形状
-        scatter_color = "b"  # 颜色
-        ax.scatter(x, delta, s=scatter_size, marker=scatter_marker,
-                   c=scatter_color, lw=0, alpha=scatter_alpha)
-
-    # 画偏差回归线
-    if regressline is not None:
-        delta = x - y
-        delta_ab = np.polyfit(x, delta, 1)
-        delta_a = delta_ab[0]
-        delta_b = delta_ab[1]
-        regressline_x = [xmin, xmax]
-        regressline_y = [xmin * delta_a + delta_b, xmax * delta_a + delta_b]
-
-        regressline_color = "r"
-        regressline_width = 1.2
-
-        ax.plot(regressline_x, regressline_y,
-                color=regressline_color, linewidth=regressline_width,
-                zorder=100)
-
-    # 画背景填充线
-    if background_fill is not None:
-        delta = x - y
-        fill_color = background_fill.get("fill_color")
-        fill_step = background_fill.get("fill_step")
-        T_seg, mean_seg, std_seg, sampleNums = get_bar_data(x, delta, xmin,
-                                                            xmax, fill_step)
-        ax.plot(T_seg, mean_seg, "o-",
-                ms=6, lw=0.6, c=fill_color,
-                mew=0, zorder=50)
-        ax.fill_between(T_seg, mean_seg - std_seg, mean_seg + std_seg,
-                        facecolor=fill_color, edgecolor=fill_color,
-                        interpolate=True, alpha=0.4, zorder=100)
-
-    # 画 avx 注释线
-    if avxline is not None:
-        avxline_x = avxline.get("line_x")
-        avxline_color = avxline.get("line_color")
-        avxline_width = 0.7
-        avxline_word = avxline.get("word")
-        avxline_wordcolor = avxline.get("word_color")
-        avxline_wordlocal = avxline.get("word_location")
-        avxline_wordsize = avxline.get("word_size")
-        ax.axvline(x=avxline_x, color=avxline_color, lw=avxline_width)
-        ax.annotate(avxline_word, avxline_wordlocal,
-                    va="top", ha="center", color=avxline_wordcolor,
-                    size=avxline_wordsize, fontproperties=FONT_MONO)
-
-
-class Scatter(PlotAx):
+class Scatter(FormatAx):
     """
     绘制相对详细图
     """
@@ -244,6 +430,7 @@ class Scatter(PlotAx):
         self.scatter_alpha = 0.8  # 透明度
         self.scatter_marker = "o"  # 形状
         self.scatter_color = "b"  # 颜色
+        self.scatter_label = 'label'  # 标签
 
         self.zero_line_width = 1.0
         self.zero_line_color = '#808080'
@@ -256,20 +443,6 @@ class Scatter(PlotAx):
         self.background_fill_zorder = 80
 
         self.plot_result = None
-
-    # TODO 背景填充线
-    # if avxline is not None:
-    #     avxline_x = avxline.get("line_x")
-    #     avxline_color = avxline.get("line_color")
-    #     avxline_width = 0.7
-    #     avxline_word = avxline.get("word")
-    #     avxline_wordcolor = avxline.get("word_color")
-    #     avxline_wordlocal = avxline.get("word_location")
-    #     avxline_wordsize = avxline.get("word_size")
-    #     ax.axvline(x=avxline_x, color=avxline_color, lw=avxline_width)
-    #     ax.annotate(avxline_word, avxline_wordlocal,
-    #                 va="top", ha="center", color=avxline_wordcolor,
-    #                 size=avxline_wordsize, fontproperties=FONT_MONO)
 
     def set_zero_line(self, zero_line=True, width=None, color=None):
         if zero_line is not None:
@@ -296,7 +469,7 @@ class Scatter(PlotAx):
         if zorder is not None:
             self.background_fill_zorder = zorder
 
-    def set_scatter(self, size=None, alpha=None, marker=None, color=None):
+    def set_scatter(self, size=None, alpha=None, marker=None, color=None, label=None):
         if size is not None:
             self.scatter_size = size
         if alpha is not None:
@@ -305,6 +478,8 @@ class Scatter(PlotAx):
             self.scatter_marker = marker
         if color is not None:
             self.scatter_color = color
+        if label is not None:
+            self.scatter_label = label
 
     def plot_scatter(self, data_x=None, data_y=None, kde=False):
         if not kde:
@@ -343,7 +518,7 @@ class Scatter(PlotAx):
                              interpolate=True)
 
 
-class Histogram(PlotAx):
+class Histogram(FormatAx):
     """
     绘制直方图
     """
@@ -386,122 +561,6 @@ class Histogram(PlotAx):
         self.set_ax()
 
 
-class TimeSeries(PlotAx):
-    """
-    绘制长时间序列图
-    """
-    def __init__(self, ax):
-        super(TimeSeries, self).__init__(ax=ax)
-
-        self.time_series_marker = None
-        self.time_series_marker_size = None
-        self.time_series_marker_facecolor = None
-        self.time_series_marker_edgecolor = None
-        self.time_series_marker_edgewidth = None
-        self.time_series_color = None
-        self.time_series_alpha = 1.0
-        self.time_series_line_width = None
-        self.time_series_label = None
-        self.time_series_zorder = 100
-
-        self.zero_line_width = 1.0
-        self.zero_line_color = '#808080'
-
-        self.background_x = None
-        self.background_y1 = None
-        self.background_y2 = None
-        self.background_fill_color = '#f63240'
-        self.background_fill_alpha = 0.1
-        self.background_fill_zorder = 80
-
-    def set_time_series(self, maker=None, marker_size=None, marker_facecolor=None,
-                        marker_edgecolor=None, marker_edgewidth=None, color=None,
-                        alpha=None, line_width=None, label=None):
-        if maker is not None:
-            self.time_series_marker = maker
-        if marker_size is not None:
-            self.time_series_marker_size = marker_size
-        if marker_facecolor is not None:
-            self.time_series_marker_facecolor = marker_facecolor
-        if marker_edgecolor is not None:
-            self.time_series_marker_edgecolor = marker_edgecolor
-        if marker_edgewidth is not None:
-            self.time_series_marker_edgewidth = marker_edgewidth
-        if color is not None:
-            self.time_series_color = color
-        if alpha is not None:
-            self.time_series_alpha = alpha
-        if line_width is not None:
-            self.time_series_line_width = line_width
-        if label is not None:
-            self.time_series_label = label
-
-    def set_zero_line(self, zero_line=True, width=None, color=None):
-        if zero_line is not None:
-            self.zero_line = zero_line
-        if width is not None:
-            self.zero_line_width = width
-        if color is not None:
-            self.zero_line_color = color
-
-    def set_background_fill(self, background_fill=True, x=None, y1=None, y2=None, color=None,
-                      alpha=None, zorder=None):
-        if background_fill is not None:
-            self.background_fill = background_fill
-        if x is not None:
-            self.background_x = x
-        if y1 is not None:
-            self.background_y1 = y1
-        if y2 is not None:
-            self.background_y2 = y2
-        if color is not None:
-            self.background_fill_color = color
-        if alpha is not None:
-            self.background_fill_alpha = alpha
-        if zorder is not None:
-            self.background_fill_zorder = zorder
-
-    def plot_time_series(self, data_x, data_y):
-        """
-        :param data_x: 日期数据
-        :param data_y: 值数据
-        :return:
-        """
-        self.ax.plot(data_x,
-                     data_y,
-                     self.time_series_marker,
-                     ms=self.time_series_marker_size,
-                     lw=self.time_series_line_width,
-                     c=self.time_series_color,
-                     markerfacecolor=self.time_series_marker_facecolor,
-                     markeredgecolor=self.time_series_marker_edgecolor,
-                     mew=self.time_series_marker_edgewidth,
-                     alpha=self.time_series_alpha,
-                     label=self.time_series_label,
-                     zorder=self.time_series_zorder,
-        )
-        set_x_locator(self.ax, self.x_axis_min, self.x_axis_max)
-
-    def plot_time_series_test(self, data_x, data_y, **kwargs):
-        self.ax.plot(data_x, data_y, **kwargs)
-
-    def plot_zero_line(self):
-        self.ax.plot([self.x_axis_min, self.x_axis_max],
-                     [0, 0],
-                     color=self.zero_line_color,
-                     linewidth=self.zero_line_width,)
-
-    def plot_background_fill(self):
-        self.ax.fill_between(self.background_x,
-                             self.background_y1,
-                             self.background_y2,
-                             facecolor=self.background_fill_color,
-                             edgecolor=self.background_fill_color,
-                             alpha=self.background_fill_alpha,
-                             zorder=self.background_fill_zorder,
-                             interpolate=True)
-
-
 def set_tick_font(ax, scale_size=11, color="#000000"):
     """
     设定刻度的字体
@@ -514,18 +573,6 @@ def set_tick_font(ax, scale_size=11, color="#000000"):
         tick.label1.set_fontproperties(FONT0)
         tick.label1.set_fontsize(scale_size)
         tick.label1.set_color(color)
-
-
-def add_title(titledict):
-    """
-    添加大标题和xy轴名称
-    """
-    tt = plt.title(titledict["title"], fontsize=11, fontproperties=FONT0)
-    tt.set_y(1.01)  # set gap space below title and subplot
-    if "xlabel" in titledict.keys() and titledict["xlabel"] != "":
-        plt.xlabel(titledict["xlabel"], fontsize=11, fontproperties=FONT0)
-    if "ylabel" in titledict.keys() and titledict["ylabel"] != "":
-        plt.ylabel(titledict["ylabel"], fontsize=11, fontproperties=FONT0)
 
 
 def add_label(ax, label, local, fontsize=11, fontproperties=FONT_MONO):
@@ -585,6 +632,62 @@ def add_annotate(ax, strlist, local, color="#000000", fontsize=11):
     else:
         return
 
+
+def set_timeseries_x_locator(ax, xlim_min, xlim_max):
+    day_range = (xlim_max - xlim_min).days
+    if day_range <= 6:
+        return
+    if day_range <= 60:
+        days = mdates.DayLocator(interval=(day_range / 6))
+        ax.xaxis.set_major_locator(days)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d"))
+    else:
+        month_range = day_range / 30
+        if month_range <= 12.:
+            months = mdates.MonthLocator()  # every month
+            ax.xaxis.set_major_locator(months)
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+        elif month_range <= 24.:
+            months = mdates.MonthLocator(interval=2)
+            ax.xaxis.set_major_locator(months)
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+        elif month_range <= 48.:
+            months = mdates.MonthLocator(interval=4)
+            ax.xaxis.set_major_locator(months)
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+        else:
+            years = mdates.YearLocator()
+            ax.xaxis.set_major_locator(years)
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+
+        if month_range <= 48:
+            add_year_xaxis(ax, xlim_min, xlim_max)
+
+
+def add_year_xaxis(ax, xlim_min, xlim_max):
+    """
+    add year xaxis
+    """
+    if xlim_min.year == xlim_max.year:
+        ax.set_xlabel(xlim_min.year, fontsize=11, fontproperties=FONT_MONO)
+        return
+    newax = ax.twiny()
+    newax.set_frame_on(True)
+    newax.grid(False)
+    newax.patch.set_visible(False)
+    newax.xaxis.set_ticks_position("bottom")
+    newax.xaxis.set_label_position("bottom")
+    newax.set_xlim(xlim_min, xlim_max)
+    newax.xaxis.set_major_locator(mdates.YearLocator())
+    newax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    newax.spines["bottom"].set_position(("outward", 20))
+    newax.spines["bottom"].set_linewidth(0.6)
+
+    newax.tick_params(which="both", direction="in")
+    set_tick_font(newax)
+    newax.xaxis.set_tick_params(length=5)
+
+
 def day_data_write(title, data, outFile):
     """
     title: 标题
@@ -623,38 +726,6 @@ def day_data_write(title, data, outFile):
         fp.write(title)
         fp.writelines(data)
         fp.close()
-
-
-def get_bar_data(xx, delta, Tmin, Tmax, step):
-    T_seg = []
-    mean_seg = []
-    std_seg = []
-    sampleNums = []
-    for i in np.arange(Tmin, Tmax, step):
-        idx = np.where(np.logical_and(xx >= i, xx < (i + step)))[0]
-
-        if idx.size > 0:
-            DTb_block = delta[idx]
-        else:
-            continue
-
-        mean1 = np.mean(DTb_block)
-        std1 = np.std(DTb_block)
-
-        idx1 = np.where((abs(DTb_block - mean1) < std1))[0]  # 去掉偏差大于std的点
-        if idx1.size > 0:
-            DTb_block = DTb_block[idx1]
-            mean_seg.append(np.mean(DTb_block))
-            std_seg.append(np.std(DTb_block))
-            sampleNums.append(len(DTb_block))
-        else:
-            mean_seg.append(0)
-            std_seg.append(0)
-            sampleNums.append(0)
-        T_seg.append(i + step / 2.)
-
-    return np.array(T_seg), np.array(mean_seg), np.array(std_seg), np.array(
-        sampleNums)
 
 
 def get_cabr_data(cbar_file):
@@ -759,60 +830,6 @@ def bias_information(x, y, boundary=None, bias_range=1):
     return bias_info
 
 
-def set_x_locator(ax, xlim_min, xlim_max):
-    day_range = (xlim_max - xlim_min).days
-    if day_range <= 6:
-        return
-    if day_range <= 60:
-        days = mdates.DayLocator(interval=(day_range / 6))
-        ax.xaxis.set_major_locator(days)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d"))
-    else:
-        month_range = day_range / 30
-        if month_range <= 12.:
-            months = mdates.MonthLocator()  # every month
-            ax.xaxis.set_major_locator(months)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
-        elif month_range <= 24.:
-            months = mdates.MonthLocator(interval=2)
-            ax.xaxis.set_major_locator(months)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
-        elif month_range <= 48.:
-            months = mdates.MonthLocator(interval=4)
-            ax.xaxis.set_major_locator(months)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
-        else:
-            years = mdates.YearLocator()
-            ax.xaxis.set_major_locator(years)
-            ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
-
-        if month_range <= 48:
-            add_year_xaxis(ax, xlim_min, xlim_max)
-
-
-def add_year_xaxis(ax, xlim_min, xlim_max):
-    """
-    add year xaxis
-    """
-    if xlim_min.year == xlim_max.year:
-        ax.set_xlabel(xlim_min.year, fontsize=11, fontproperties=FONT_MONO)
-        return
-    newax = ax.twiny()
-    newax.set_frame_on(True)
-    newax.grid(False)
-    newax.patch.set_visible(False)
-    newax.xaxis.set_ticks_position("bottom")
-    newax.xaxis.set_label_position("bottom")
-    newax.set_xlim(xlim_min, xlim_max)
-    newax.xaxis.set_major_locator(mdates.YearLocator())
-    newax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
-    newax.spines["bottom"].set_position(("outward", 20))
-    newax.spines["bottom"].set_linewidth(0.6)
-
-    newax.tick_params(which="both", direction="in")
-    set_tick_font(newax)
-    newax.xaxis.set_tick_params(length=5)
-
-
 if __name__ == "__main__":
-    pass
+    t_base_map = Basemap()
+    t_m_patches = mpatches
