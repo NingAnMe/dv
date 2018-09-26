@@ -5,6 +5,7 @@
 """
 import os
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 import numpy as np
 from scipy import stats
@@ -828,6 +829,43 @@ def bias_information(x, y, boundary=None, bias_range=1):
                  "info_lower": info_lower, "info_greater": info_greater}
 
     return bias_info
+
+
+def get_month_avg_std(date_day, value_day):
+    """
+    由日数据生成月平均数据
+    :param date_day: (list) [datetime 实例]
+    :param value_day: (list)
+    :return: (date_month, avg_month, std_month)
+    """
+    date_month = []
+    avg_month = []
+    std_month = []
+
+    date_day = np.array(date_day)
+    value_day = np.array(value_day)
+
+    ymd_start = np.nanmin(date_day)  # 第一天日期
+    ymd_end = np.nanmax(date_day)  # 最后一天日期
+    month_date_start = ymd_start - relativedelta(
+        days=(ymd_start.day - 1))  # 第一个月第一天日期
+
+    while month_date_start <= ymd_end:
+        # 当月最后一天日期
+        month_date_end = month_date_start + relativedelta(months=1) - relativedelta(days=1)
+
+        # 查找当月所有数据
+        month_idx = np.logical_and(date_day >= month_date_start, date_day <= month_date_end)
+        value_month = value_day[month_idx]
+
+        avg = np.nanmean(value_month)
+        std = np.nanstd(value_month)
+        date_month = np.append(date_month, month_date_start + relativedelta(days=14))
+        avg_month = np.append(avg_month, avg)
+        std_month = np.append(std_month, std)
+
+        month_date_start = month_date_start + relativedelta(months=1)
+    return date_month, avg_month, std_month
 
 
 if __name__ == "__main__":
