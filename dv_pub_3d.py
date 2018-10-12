@@ -945,6 +945,8 @@ def draw_timeseries(ax, x, y, label=None, ax_annotate=None, tick=None,
         scale_size = 11
     set_tick_font(ax, scale_size=scale_size)
 
+    set_x_locator(ax, xmin, xmax)
+
 
 def get_dot_color(xlist, ylist):
     """

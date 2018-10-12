@@ -145,17 +145,53 @@ class PlotAx(object):
         # 设置图片注释文字
         if 'annotate' in kwargs:
             annotate = kwargs.get('annotate')
-            if 'annotate_font_size' in kwargs:
-                annotate_font_size = kwargs.get('annotate_font_size')
+            if 'font_size' in annotate:
+                font_size = annotate.get('font_size')
             else:
-                annotate_font_size = self.annotate_font_size
-            if 'annotate_font_color' in kwargs:
-                annotate_font_color = kwargs.get('annotate_font_color')
+                font_size = self.annotate_font_size
+            if 'font_color' in annotate:
+                font_color = annotate.get('font_color')
             else:
-                annotate_font_color = self.annotate_font_color
+                font_color = self.annotate_font_color
             for k in annotate:
-                add_annotate(ax, annotate[k], k, fontsize=annotate_font_size,
-                             color=annotate_font_color)
+                add_annotate(ax, annotate[k], k, fontsize=font_size,
+                             color=font_color)
+
+    @classmethod
+    def plot_density_scatter(cls, ax, x, y, marker='o', alpha=1, marker_size=5):
+        pos = np.vstack([x, y])
+        kernel = stats.gaussian_kde(pos)
+        z = kernel(pos)
+        norm = plt.Normalize()
+        norm.autoscale(z)
+
+        ax.scatter(x, y, c=z, norm=norm, s=marker_size, marker=marker,
+                   cmap=plt.get_cmap('jet'), lw=0,
+                   alpha=alpha)
+
+    @classmethod
+    def plot_regression_line(cls, ax, x, y, w, color='r', linewidth=1.2, zorder=100):
+        ab = np.polyfit(x, y, 1, w=w)
+        a = ab[0]
+        b = ab[1]
+        x_min = np.nanmin(x)
+        x_max = np.nanmax(x)
+        ax.plot([x_min, x_max], [x_min * a + b, x_max * a + b],
+                color=color, linewidth=linewidth, zorder=zorder)
+
+    @classmethod
+    def plot_diagonal_line(cls, ax, x=None, y=None, x_range=None, y_range=None,
+                           color='#808080', linewidth=1.2):
+        if x_range is not None and y_range is not None:
+            x_min, x_max = x_range
+            y_min, y_max = y_range
+        elif x is not None and y is not None:
+            x_min, x_max = np.min(x), np.max(x)
+            y_min, y_max = np.min(y), np.max(y)
+        else:
+            return
+        ax.plot([x_min, x_max], [y_min, y_max], color=color,
+                linewidth=linewidth)
 
     @classmethod
     def plot_time_series(cls, ax, data_x, data_y, marker=None, marker_size=None,
