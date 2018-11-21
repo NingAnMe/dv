@@ -7,6 +7,7 @@ import os
 from dateutil.relativedelta import relativedelta
 
 import numpy as np
+from numpy.core.multiarray import ndarray
 from scipy import stats
 import matplotlib as mpl
 
@@ -273,6 +274,8 @@ class PlotAx(object):
 
         # zz 要画的值
         x_size = (date_end - date_start).days
+        if x_size <= 0:
+            raise ValueError(u'时间间隔小于1')
         zz = np.full((len(yy), x_size), -65535)  # 将值填充为 - ，以前填充0
         zz = np.ma.masked_where(zz == -65535, zz)
 
@@ -472,21 +475,21 @@ def add_annotate(ax, strlist, local, color="#000000", fontsize=11, font=FONT_MON
     if local == "left_top":
         ax.text(xlim[0] + x_toedge, ylim[1] - y_toedge,
                 "\n".join(strlist), ha="left", va="top", color=color,
-                fontsize=fontsize, fontproperties=font)
+                fontsize=fontsize, fontproperties=font, zorder=100)
 
     elif local == "right_top":
         ax.text(xlim[1] - x_toedge, ylim[1] - y_toedge,
                 "\n".join(strlist), ha="right", va="top", color=color,
-                fontsize=fontsize, fontproperties=font)
+                fontsize=fontsize, fontproperties=font, zorder=100)
 
     elif local == "left_bottom":
         ax.text(xlim[0] + x_toedge, ylim[0] + y_toedge,
                 "\n".join(strlist), ha="left", va="bottom", color=color,
-                fontsize=fontsize, fontproperties=font)
+                fontsize=fontsize, fontproperties=font, zorder=100)
     elif local == "right_bottom":
         ax.text(xlim[1] - x_toedge, ylim[0] + y_toedge,
                 "\n".join(strlist), ha="right", va="bottom", color=color,
-                fontsize=fontsize, fontproperties=font)
+                fontsize=fontsize, fontproperties=font, zorder=100)
     else:
         return
 
@@ -529,10 +532,10 @@ def get_month_avg_std(date_day, value_day):
 
 
 def get_bar_data(x, y, x_range, step):
-    T_seg = []
+    step_seg = []
     mean_seg = []
     std_seg = []
-    sampleNums = []
+    sample_numbers = []
     x_min, x_max = x_range
     for i in np.arange(x_min, x_max, step):
         idx = np.where(np.logical_and(x >= i, x < (i + step)))[0]
@@ -541,11 +544,11 @@ def get_bar_data(x, y, x_range, step):
             block = y[idx]
             mean_seg.append(np.mean(block))
             std_seg.append(np.std(block))
-            sampleNums.append(len(block))
-            T_seg.append(i + step / 2.)
+            sample_numbers.append(len(block))
+            step_seg.append(i + step / 2.)
 
-    return np.array(T_seg), np.array(mean_seg), np.array(std_seg), np.array(
-        sampleNums)
+    return np.array(step_seg), np.array(mean_seg), np.array(std_seg), np.array(
+        sample_numbers)
 
 
 if __name__ == "__main__":
