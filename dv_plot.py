@@ -10,6 +10,7 @@ import numpy as np
 from numpy.core.multiarray import ndarray
 from scipy import stats
 import matplotlib as mpl
+import matplotlib.image as img
 
 mpl.use("Agg")  # 必须加这个字段，否则引用 pyplot 服务器会报错，服务器上面没有 TK
 
@@ -414,6 +415,33 @@ class PlotAx(object):
         newax.tick_params(which="both", direction="in")
         set_tick_font(newax, font_size=12, color="#000000", font=FONT0)
         newax.xaxis.set_tick_params(length=5)
+
+
+class PlotFigure(object):
+    def __init__(self):
+        pass
+
+    @classmethod
+    def add_image(cls, fig, imgsize, image_path, position='LB'):
+        """
+        :param fig: matplotlib.figure
+        :param imgsize: (width, high)
+        :param image_path:
+        :param position: 'LB' or 'RB'
+        :return:
+        """
+        img_width, img_high = imgsize
+        if position == 'LB':
+            rect = [0, 0, img_width, img_high]
+        elif position == 'RB':
+            rect = [1. - img_width, 0, img_width, img_high]
+        else:
+            raise KeyError
+        image = img.imread(image_path)
+        ax = fig.add_axes(rect, anchor='C')
+        ax.axis('off')
+        ax.imshow(image)
+        return fig, ax
 
 
 def set_tick_font(ax, font_size=None, color=None, font=None):
