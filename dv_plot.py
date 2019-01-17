@@ -416,10 +416,47 @@ class PlotAx(object):
         set_tick_font(newax, font_size=12, color="#000000", font=FONT0)
         newax.xaxis.set_tick_params(length=5)
 
+    @classmethod
+    def add_colorbar_horizontal(cls, ax, valmin, valmax,
+                                cmap='jet',
+                                fmt="%d", extend="neither", bounds=None, unit=None,
+                                font=FONT0, font_size=8, edge_lw=0.6):
+
+        """
+        在fig上添加水平colorbar
+        """
+        norm = mpl.colors.Normalize(vmin=valmin, vmax=valmax)
+        cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
+                                       norm=norm, extend=extend,
+                                       boundaries=bounds,
+                                       ticks=bounds,
+                                       orientation='horizontal', format=fmt)
+        # font of colorbar
+        for l in ax.yaxis.get_ticklabels():
+            l.set_fontproperties(font)
+            l.set_fontsize(font_size)
+        if unit:
+            cb.ax.set_title(unit, y=1.01,
+                            fontproperties=font, fontsize=font_size)
+        cb.outline.set_linewidth(edge_lw)
+
 
 class PlotFigure(object):
     def __init__(self):
         pass
+
+    @classmethod
+    def add_ax(cls, fig, pos_x, pos_y, width, height):
+        """
+        添加子图ax
+        :param fig: plt.figure
+        :param pos_x: 左下角位置 百分比形式
+        :param pos_y: 左下角位置 百分比形式
+        :param width: 子图宽 百分比形式
+        :param height: 子图高 百分比形式
+        :return:
+        """
+        return fig.add_axes([pos_x, pos_y, width, height])
 
     @classmethod
     def add_image(cls, fig, imgsize, image_path, position='LB'):
@@ -442,6 +479,28 @@ class PlotFigure(object):
         ax.axis('off')
         ax.imshow(image)
         return fig, ax
+
+
+def colormap_blue2red():
+    """
+    自定义colormap 蓝到红
+    """
+    clst = [(0, '#0000ff'),
+            (0.333, '#00ffff'),
+            (0.667, '#ffff00'),
+            (1, '#ff0000')]
+    return colors.LinearSegmentedColormap.from_list('b2r', clst)
+
+
+def get_colormap():
+    """
+    自定义colormap
+    :return:
+    """
+    color_list = ['#000081', '#0000C8', '#1414FF', '#A3A3FF', '#FFA3A3', '#FF1414',
+                  '#C70000', '#810000']
+    cmap = colors.ListedColormap(color_list, 'indexed')
+    return cmap
 
 
 def set_tick_font(ax, font_size=None, color=None, font=None):
