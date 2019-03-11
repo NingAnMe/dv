@@ -304,7 +304,7 @@ class PlotAx(object):
                             fontsize=6, fontproperties=FONT_MONO)
 
     @classmethod
-    def plot_zero_line(cls, ax, data, x_range, line_color=None, line_width=None):
+    def plot_zero_line(cls, ax, data=None, x_range=None, line_color=None, line_width=None):
         """
         绘制 y = 0 线
         :param x_range:
